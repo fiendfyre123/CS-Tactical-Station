@@ -220,6 +220,19 @@ mark.kw{background:var(--gold);color:var(--bg);border-radius:3px;padding:0 2px;f
     .map-intro-card .map-banner{padding:18px}
     .map-intro-card .map-body{padding:16px}
 }
+/* 游戏按钮 */
+.game-btn{background:transparent;border:2px solid var(--gold);color:var(--gold);padding:8px 18px;border-radius:30px;font-weight:700;font-size:.9rem;cursor:pointer;display:flex;align-items:center;gap:6px;transition:var(--transition);white-space:nowrap;letter-spacing:.5px;user-select:none}
+.game-btn:hover{background:var(--gold);color:var(--bg);box-shadow:0 0 20px rgba(240,176,0,.4);transform:translateY(-1px)}
+.game-btn:active{transform:translateY(0)}
+@media(max-width:700px){.game-btn{padding:8px 12px;font-size:.82rem}.game-btn span{display:none}}
+
+/* 游戏全屏遮罩 */
+.game-overlay{position:fixed;inset:0;background:#0d0f13;z-index:2000;display:none;align-items:center;justify-content:center}
+.game-overlay.active{display:flex}
+.game-frame-wrap{position:relative;width:100%;height:100%}
+.game-frame{width:100%;height:100%;border:none;display:block;background:#0d0f13}
+.game-close{position:absolute;top:16px;right:16px;z-index:10;background:rgba(15,17,22,.85);border:2px solid var(--gold);color:var(--gold);width:44px;height:44px;border-radius:50%;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--transition);backdrop-filter:blur(6px);font-weight:700}
+.game-close:hover{background:var(--gold);color:var(--bg);transform:rotate(90deg)}
 </style>
 </head>
 <body>
@@ -229,7 +242,7 @@ mark.kw{background:var(--gold);color:var(--bg);border-radius:3px;padding:0 2px;f
             <div class="logo-icon">💣</div>
             <h1>CS2<span>战术站</span></h1>
         </div>
-        <div class="search-box" id="searchBox">
+                <div class="search-box" id="searchBox">
             <input type="text" id="searchInput" placeholder="搜索道具、点位、战术、战队、地图、武器..." autocomplete="off" />
             <button id="searchClearBtn" class="clear-btn" title="清空搜索">✕</button>
             <div class="search-mode" id="searchMode">
@@ -238,6 +251,7 @@ mark.kw{background:var(--gold);color:var(--bg);border-radius:3px;padding:0 2px;f
             </div>
             <button id="searchBtn">🔍 搜索</button>
         </div>
+        <button class="game-btn" id="gameBtn" title="玩小游戏 BLACKOUT">🎮 <span>BLACKOUT</span></button>
     </header>
 
     <div class="search-hint" id="searchHint">
@@ -319,6 +333,13 @@ mark.kw{background:var(--gold);color:var(--bg);border-radius:3px;padding:0 2px;f
 
 <div class="detail-overlay" id="detailOverlay">
     <div class="detail-panel" id="detailPanel"></div>
+</div>
+<!-- 小游戏全屏遮罩 -->
+<div class="game-overlay" id="gameOverlay">
+    <div class="game-frame-wrap">
+        <button class="game-close" id="gameCloseBtn" title="关闭游戏 (ESC)">✕</button>
+        <iframe class="game-frame" id="gameFrame" title="BLACKOUT 小游戏"></iframe>
+    </div>
 </div>
 
 <script>
@@ -1669,8 +1690,15 @@ mark.kw{background:var(--gold);color:var(--bg);border-radius:3px;padding:0 2px;f
     detailOverlay.addEventListener('click', function(e) {
         if (e.target === this) closeDetail();
     });
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeDetail();
+       document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            // 优先关闭游戏（游戏打开时）
+            if (gameOverlay && gameOverlay.classList.contains('active')) {
+                closeGame();
+            } else {
+                closeDetail();
+            }
+        }
     });
     mapTabs.addEventListener('click', function(e) {
         var btn = e.target.closest('.filter-btn');
@@ -1928,6 +1956,37 @@ mark.kw{background:var(--gold);color:var(--bg);border-radius:3px;padding:0 2px;f
             } else {
                 btn.insertAdjacentHTML('beforeend', '<span class="map-count">' + (counts[cat] !== undefined ? counts[cat] : 0) + '</span>');
             }
+        });
+    }
+    // ============ 小游戏开关 ============
+    var gameBtn = $('gameBtn');
+    var gameOverlay = $('gameOverlay');
+    var gameFrame = $('gameFrame');
+    var gameCloseBtn = $('gameCloseBtn');
+
+    function openGame() {
+        if (!gameOverlay || !gameFrame) return;
+        // 懒加载：第一次打开才设置 src
+        if (!gameFrame.src) gameFrame.src = 'blackout.html';
+        gameOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        // iframe 内聚焦，让键盘操作直接生效
+        setTimeout(function() { try { gameFrame.focus(); } catch (e) {} }, 100);
+    }
+
+    function closeGame() {
+        if (!gameOverlay) return;
+        gameOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+        // 关闭时清空 src，终止游戏循环，释放资源
+        if (gameFrame) gameFrame.src = 'about:blank';
+    }
+
+    if (gameBtn) gameBtn.addEventListener('click', openGame);
+    if (gameCloseBtn) gameCloseBtn.addEventListener('click', closeGame);
+    if (gameOverlay) {
+        gameOverlay.addEventListener('click', function(e) {
+            if (e.target === gameOverlay) closeGame();
         });
     }
 
