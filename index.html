@@ -1965,22 +1965,22 @@ mark.kw{background:var(--gold);color:var(--bg);border-radius:3px;padding:0 2px;f
     var gameCloseBtn = $('gameCloseBtn');
 
     function openGame() {
-        if (!gameOverlay || !gameFrame) return;
-        // 懒加载：第一次打开才设置 src
-        if (!gameFrame.src) gameFrame.src = 'blackout.html';
-        gameOverlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        // iframe 内聚焦，让键盘操作直接生效
-        setTimeout(function() { try { gameFrame.focus(); } catch (e) {} }, 100);
-    }
+    if (!gameOverlay || !gameFrame) return;
+    // ★ 每次打开都重新加载，避免 about:blank 残留导致黑屏
+    gameFrame.src = 'blackout.html';
+    gameOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    // iframe 内聚焦，让键盘操作直接生效
+    setTimeout(function() { try { gameFrame.focus(); } catch (e) {} }, 100);
+}
 
-    function closeGame() {
-        if (!gameOverlay) return;
-        gameOverlay.classList.remove('active');
-        document.body.style.overflow = '';
-        // 关闭时清空 src，终止游戏循环，释放资源
-        if (gameFrame) gameFrame.src = 'about:blank';
-    }
+function closeGame() {
+    if (!gameOverlay) return;
+    gameOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+    // 清空 src，终止游戏循环，释放资源
+    if (gameFrame) gameFrame.src = 'about:blank';
+}
 
     if (gameBtn) gameBtn.addEventListener('click', openGame);
     if (gameCloseBtn) gameCloseBtn.addEventListener('click', closeGame);
